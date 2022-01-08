@@ -53,7 +53,7 @@ inline char* realpath(const char* path, char* resolved_path) {
 /**
  * Define an alias for the popen and pclose functions on windows
  */
-#define popen _popen
+//#define popen _popen
 #define pclose _pclose
 #endif
 

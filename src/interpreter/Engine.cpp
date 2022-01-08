@@ -111,7 +111,7 @@
 #include <utility>
 #include <vector>
 #include <dlfcn.h>
-#include <ffi.h>
+//#include <ffi.h>
 
 namespace souffle::interpreter {
 
@@ -282,7 +282,7 @@ void Engine::executeMain() {
     generateIR();
     assert(main != nullptr && "Executing an empty program");
 
-    loadDLL();
+    //loadDLL();
 
     Context ctxt;
 
@@ -657,127 +657,7 @@ RamDomain Engine::execute(const Node* node, Context& ctxt) {
 #undef RUN_RANGE
         ESAC(NestedIntrinsicOperator)
 
-        CASE(UserDefinedOperator)
-            const std::string& name = cur.getName();
 
-            auto userFunctor = reinterpret_cast<void (*)()>(getMethodHandle(name));
-            if (userFunctor == nullptr) fatal("cannot find user-defined operator `%s`", name);
-            std::size_t arity = cur.getArguments().size();
-
-            if (cur.isStateful()) {
-                // prepare dynamic call environment
-                ffi_cif cif;
-                ffi_type* args[arity + 2];
-                void* values[arity + 2];
-                RamDomain intVal[arity];
-                ffi_arg rc;
-
-                /* Initialize arguments for ffi-call */
-                args[0] = args[1] = &ffi_type_pointer;
-                void* symbolTable = (void*)&getSymbolTable();
-                values[0] = &symbolTable;
-                void* recordTable = (void*)&getRecordTable();
-                values[1] = &recordTable;
-                for (std::size_t i = 0; i < arity; i++) {
-                    intVal[i] = execute(shadow.getChild(i), ctxt);
-                    args[i + 2] = &FFI_RamSigned;
-                    values[i + 2] = &intVal[i];
-                }
-
-                // Set codomain.
-                auto codomain = &FFI_RamSigned;
-
-                // Call the external function.
-                const auto prepStatus = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity + 2, codomain, args);
-                if (prepStatus != FFI_OK) {
-                    fatal("Failed to prepare CIF for user-defined operator `%s`; error code = %d", name,
-                            prepStatus);
-                }
-                ffi_call(&cif, userFunctor, &rc, values);
-                return static_cast<RamDomain>(rc);
-            } else {
-                const std::vector<TypeAttribute>& types = cur.getArgsTypes();
-
-                // prepare dynamic call environment
-                ffi_cif cif;
-                ffi_type* args[arity];
-                void* values[arity];
-                RamDomain intVal[arity];
-                RamUnsigned uintVal[arity];
-                RamFloat floatVal[arity];
-                const char* strVal[arity];
-
-                /* Initialize arguments for ffi-call */
-                for (std::size_t i = 0; i < arity; i++) {
-                    RamDomain arg = execute(shadow.getChild(i), ctxt);
-                    switch (types[i]) {
-                        case TypeAttribute::Symbol:
-                            args[i] = &FFI_Symbol;
-                            strVal[i] = getSymbolTable().decode(arg).c_str();
-                            values[i] = &strVal[i];
-                            break;
-                        case TypeAttribute::Signed:
-                            args[i] = &FFI_RamSigned;
-                            intVal[i] = arg;
-                            values[i] = &intVal[i];
-                            break;
-                        case TypeAttribute::Unsigned:
-                            args[i] = &FFI_RamUnsigned;
-                            uintVal[i] = ramBitCast<RamUnsigned>(arg);
-                            values[i] = &uintVal[i];
-                            break;
-                        case TypeAttribute::Float:
-                            args[i] = &FFI_RamFloat;
-                            floatVal[i] = ramBitCast<RamFloat>(arg);
-                            values[i] = &floatVal[i];
-                            break;
-                        case TypeAttribute::ADT: fatal("ADT support is not implemented");
-                        case TypeAttribute::Record: fatal("Record support is not implemented");
-                    }
-                }
-
-                // Get codomain.
-                auto codomain = &FFI_RamSigned;
-                switch (cur.getReturnType()) {
-                    case TypeAttribute::Symbol: codomain = &FFI_Symbol; break;
-                    case TypeAttribute::Signed: codomain = &FFI_RamSigned; break;
-                    case TypeAttribute::Unsigned: codomain = &FFI_RamUnsigned; break;
-                    case TypeAttribute::Float: codomain = &FFI_RamFloat; break;
-                    case TypeAttribute::ADT: fatal("Not implemented");
-                    case TypeAttribute::Record: fatal("Not implemented");
-                }
-
-                // Call the external function.
-                const auto prepStatus = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, codomain, args);
-                if (prepStatus != FFI_OK) {
-                    fatal("Failed to prepare CIF for user-defined operator `%s`; error code = %d", name,
-                            prepStatus);
-                }
-
-                // Call †he functor and return
-                // Float return type needs special treatment, see https://stackoverflow.com/q/61577543
-                if (cur.getReturnType() == TypeAttribute::Float) {
-                    RamFloat rvalue;
-                    ffi_call(&cif, userFunctor, &rvalue, values);
-                    return ramBitCast(rvalue);
-                } else {
-                    ffi_arg rvalue;
-                    ffi_call(&cif, userFunctor, &rvalue, values);
-
-                    switch (cur.getReturnType()) {
-                        case TypeAttribute::Signed: return static_cast<RamDomain>(rvalue);
-                        case TypeAttribute::Symbol:
-                            return getSymbolTable().encode(reinterpret_cast<const char*>(rvalue));
-                        case TypeAttribute::Unsigned: return ramBitCast(static_cast<RamUnsigned>(rvalue));
-                        case TypeAttribute::Float: fatal("Floats must be handled seperately");
-                        case TypeAttribute::ADT: fatal("Not implemented");
-                        case TypeAttribute::Record: fatal("Not implemented");
-                    }
-                    fatal("Unsupported user defined operator");
-                }
-            }
-
-        ESAC(UserDefinedOperator)
 
         CASE(PackRecord)
             auto values = cur.getArguments();

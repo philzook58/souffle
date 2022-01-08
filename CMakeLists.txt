@@ -4,7 +4,14 @@
 # - https://opensource.org/licenses/UPL
 # - <souffle root>/licenses/SOUFFLE-UPL.txt
 
+
 cmake_minimum_required(VERSION 3.15)
+
+set( CURSES_INCLUDE_PATH "/usr/include")
+set( CURSES_LIBRARY "/usr/lib/x86_64-linux-gnu/libncurses.so")
+set(ZLIB_LIBRARY "/usr/lib/x86_64-linux-gnu/libz.so")
+set(ZLIB_INCLUDE_DIR "/usr/include")
+
 
 include(CMakeDependentOption)
 
@@ -78,13 +85,13 @@ endif()
 # User options available from the command line/cache
 # --------------------------------------------------
 option(SOUFFLE_DOMAIN_64BIT "Enable/Disable 64-bit number values in Datalog tuples" OFF)
-option(SOUFFLE_USE_CURSES "Enable/Disable ncurses-based provenance display" ON)
+option(SOUFFLE_USE_CURSES "Enable/Disable ncurses-based provenance display" OFF)
 option(SOUFFLE_SWIG "Enable/Disable all SWIG builds" OFF)
 option(SOUFFLE_SWIG_PYTHON "Enable/Disable Python SWIG" OFF)
 option(SOUFFLE_SWIG_JAVA "Enable/Disable Java SWIG" OFF)
-option(SOUFFLE_USE_ZLIB "Enable/Disable use of libz file compression" ON)
-option(SOUFFLE_USE_SQLITE "Enable/Disable use sqlite IO" ON)
-option(SOUFFLE_USE_OPENMP "Enable/Disable use of openmp if available" ON)
+option(SOUFFLE_USE_ZLIB "Enable/Disable use of libz file compression" OFF)
+option(SOUFFLE_USE_SQLITE "Enable/Disable use sqlite IO" OFF)
+option(SOUFFLE_USE_OPENMP "Enable/Disable use of openmp if available" OFF)
 option(SOUFFLE_SANITISE_MEMORY "Enable/Disable memory sanitiser" OFF)
 option(SOUFFLE_SANITISE_THREAD "Enable/Disable thread sanitiser" OFF)
 # SOUFFLE_NDEBUG = ON means -DNDEBUG on the compiler command line = no cassert
@@ -93,15 +100,16 @@ option(SOUFFLE_NDEBUG "Enable/Disable runtime checks even in release mode" OFF)
 # By default, the "test/example" directory is not part of testing
 # this flag enables the tests to run
 option(SOUFFLE_TEST_EXAMPLES "Enable/Disable testing of code examples in tests/examples" OFF)
-option(SOUFFLE_TEST_EVALUATION "Enable/Disable testing of evaluation examples in tests/examples" ON)
-option(SOUFFLE_ENABLE_TESTING "Enable/Disable testing" ${SOUFFLE_ENABLE_TESTING_DEFAULT})
+option(SOUFFLE_TEST_EVALUATION "Enable/Disable testing of evaluation examples in tests/examples" OFF)
+option(SOUFFLE_ENABLE_TESTING "Enable/Disable testing" OFF)
 option(SOUFFLE_GENERATE_DOXYGEN "Generate Doxygen files (html;htmlhelp;man;rtf;xml;latex)" "")
 option(SOUFFLE_CODE_COVERAGE "Enable coverage reporting" OFF)
-option(SOUFFLE_BASH_COMPLETION "Enable/Disable bash completion" ON)
+option(SOUFFLE_BASH_COMPLETION "Enable/Disable bash completion" OFF)
 
-cmake_dependent_option(SOUFFLE_USE_LIBCPP "Link to libc++ instead of libstdc++" ON
+cmake_dependent_option(SOUFFLE_USE_LIBCPP "Link to libc++ instead of libstdc++" OFF
     "CMAKE_CXX_COMPILER_ID STREQUAL Clang" OFF)
 
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -s ERROR_ON_UNDEFINED_SYMBOLS=0")
 # Using Clang? Likely want to use `lld` too.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
@@ -192,12 +200,12 @@ endif()
 # --------------------------------------------------
 # libffi
 # --------------------------------------------------
-find_package(LibFFI REQUIRED)
+#find_package(LibFFI REQUIRED)
 
 # --------------------------------------------------
 # pthreads
 # --------------------------------------------------
-set(THREADS_PREFER_PTHREAD_FLAG ON)
+set(THREADS_PREFER_PTHREAD_FLAG OFF)
 find_package(Threads REQUIRED)
 
 # --------------------------------------------------

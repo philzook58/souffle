@@ -181,10 +181,12 @@ void compileToBinary(const std::string& command, std::string_view sourceFilename
 
 int main(int argc, char** argv) {
     /* Time taking for overall runtime */
+    std::cout << "Here-1" << std::endl;
     auto souffle_start = std::chrono::high_resolution_clock::now();
 
     /* have all to do with command line arguments in its own scope, as these are accessible through the global
      * configuration only */
+    std::cout << "Here5" << std::endl;
     try {
         std::stringstream header;
         header << "============================================================================" << std::endl;
@@ -294,6 +296,7 @@ int main(int argc, char** argv) {
             std::cout << "Copyright (c) 2013-16 Oracle and/or its affiliates." << std::endl;
             return 0;
         }
+        std::cout << "Hereversion" << std::endl;
         Global::config().set("version", PACKAGE_VERSION);
 
         /* for the help option, if given simply print the help text then exit */
@@ -306,11 +309,12 @@ int main(int argc, char** argv) {
             std::cerr << "No datalog file specified.\n";
             return 0;
         }
-
+        std::cout << "specified" << std::endl;
         /* check that datalog program exists */
         if (!existFile(Global::config().get(""))) {
             throw std::runtime_error("cannot open file " + std::string(Global::config().get("")));
         }
+        std::cout << "field exists" << std::endl;
 
         /* for the jobs option, to determine the number of threads used */
 #ifdef _OPENMP
@@ -381,32 +385,33 @@ int main(int argc, char** argv) {
     // ------ start souffle -------------
 
     std::string souffleExecutable = which(argv[0]);
+    std::cout << "Here1" << std::endl;
 
     if (souffleExecutable.empty()) {
         throw std::runtime_error("failed to determine souffle executable path");
     }
+    
+    // /* Create the pipe to establish a communication between cpp and souffle */
+    // std::string cmd = which("mcpp");
 
-    /* Create the pipe to establish a communication between cpp and souffle */
-    std::string cmd = which("mcpp");
+    // if (!isExecutable(cmd)) {
+    //     throw std::runtime_error("failed to locate mcpp pre-processor");
+    // }
 
-    if (!isExecutable(cmd)) {
-        throw std::runtime_error("failed to locate mcpp pre-processor");
-    }
-
-    cmd += " -e utf8 -W0 ";
-    cmd += toString(join(Global::config().getMany("include-dir"), " ",
-            [&](auto&& os, auto&& dir) { tfm::format(os, "'-I%s'", dir); }));
-    if (Global::config().has("macro")) {
-        cmd += " " + Global::config().get("macro");
-    }
-    // Add RamDomain size as a macro
-    cmd += " -DRAM_DOMAIN_SIZE=" + std::to_string(RAM_DOMAIN_SIZE);
-    cmd += " '" + Global::config().get("") + "'";
-    FILE* in = popen(cmd.c_str(), "r");
-
+    // cmd += " -e utf8 -W0 ";
+    // cmd += toString(join(Global::config().getMany("include-dir"), " ",
+    //         [&](auto&& os, auto&& dir) { tfm::format(os, "'-I%s'", dir); }));
+    // if (Global::config().has("macro")) {
+    //     cmd += " " + Global::config().get("macro");
+    // }
+    // // Add RamDomain size as a macro
+    // cmd += " -DRAM_DOMAIN_SIZE=" + std::to_string(RAM_DOMAIN_SIZE);
+    // cmd += " '" + Global::config().get("") + "'";
+    // FILE* in = popen(cmd.c_str(), "r");
+    FILE* in = fopen(Global::config().get("").c_str(), "r");
     /* Time taking for parsing */
     auto parser_start = std::chrono::high_resolution_clock::now();
-
+    std::cout << "Here2" << std::endl;
     // ------- parse program -------------
 
     // parse file
@@ -414,13 +419,16 @@ int main(int argc, char** argv) {
     DebugReport debugReport;
     Own<ast::TranslationUnit> astTranslationUnit =
             ParserDriver::parseTranslationUnit("<stdin>", in, errReport, debugReport);
-
+    std::cout << "Here3" << std::endl;
+    int preprocessor_status = fclose(in);
+    std::cout << "Here4" << std::endl;
     // close input pipe
+    /*
     int preprocessor_status = pclose(in);
     if (preprocessor_status == -1) {
         perror(nullptr);
         throw std::runtime_error("failed to close pre-processor pipe");
-    }
+    } */
 
     /* Report run-time of the parser if verbose flag is set */
     if (Global::config().has("verbose")) {
