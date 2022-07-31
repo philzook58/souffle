@@ -23,6 +23,11 @@ path(x,z) :- edge(x,y), path(y,z).
 <button onclick="myrun()">Run</button>
 <div id="stdout"></div>
 <div id="stderr"></div>
+<ul>
+  <li> More about souffle <a href="https://souffle-lang.github.io/">https://souffle-lang.github.io/</a></li>
+  <li> <a href="https://github.com/philzook58/souffle/tree/emscripten2">My WASM branch</a>
+</ul>
+
 
 <script>
 
@@ -63,7 +68,7 @@ FS.writeFile('file', 'foobar');
         'printErr': function(text) {document.getElementById("stderr").innerText += "\n" + text; console.error(text) },
         "noInitialRun": false,
         "noExitRuntime": false,
-        "arguments" : ["--no-preprocessor",  "myfile.dl"], 
+        "arguments" : ["--no-preprocessor", "-D", "-", "myfile.dl"], 
         "preRun" : function(){
           var code = document.getElementById("code").value;
           console.log(code);

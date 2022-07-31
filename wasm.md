@@ -18,3 +18,11 @@ Todo:
 Support dlopen. MAIN_MODULE=2 somehow should work but maybe need -fpic on entire build?
 
 
+Modularize=1 was important to get multiple runs independent
+--no-proprocessor 
+-D -
+Exposing the filesystem
+
+It turns out link flags is where you put this stuff in cmake file. makes sense.
+
+
