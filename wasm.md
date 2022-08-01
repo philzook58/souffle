@@ -26,3 +26,6 @@ Exposing the filesystem
 It turns out link flags is where you put this stuff in cmake file. makes sense.
 
 
+I believe you can renamed the module
+https://stackoverflow.com/questions/33623682/how-to-use-fs-when-modularize-and-export-name-are-used-in-emscripten
+-s EXPORT_NAME="'SOUFFLE'"
