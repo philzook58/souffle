@@ -21,6 +21,7 @@ path(x,z) :- edge(x,y), path(y,z).
 .output path
 </textarea>
 <button onclick="myrun()">Run</button>
+<button onclick="make_link()">Share</button>
 <div id="stdout"></div>
 <div id="stderr"></div>
 <ul>
@@ -51,7 +52,20 @@ FS.writeFile('file', 'foobar');
 <script>
 
 
+var urlParams = new URLSearchParams(window.location.search);
+var code = urlParams.get('code');
+console.log(code);
+if(code != null){
+  document.getElementById("code").innerHTML = code;
+}
 
+function make_link(){
+  var code = document.getElementById("code").value;
+  var path = new URL(document.location);
+  path.searchParams.set('code', code);
+  document.getElementById("stdout").innerHTML = path.toString();
+  //navigator.clipboard.writeText(path.toString());
+}
 
    function myrun(){
       var code = document.getElementById("code").innerHTML;
